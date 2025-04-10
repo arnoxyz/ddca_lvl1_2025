@@ -104,7 +104,7 @@ begin
             --data_cnt => Counter for the data from the snes_controller:
             --counts from 0=B, to 11=R for data and then to 12-15='1' = data will be checked but not saved) 
             --[B=0,Y=1,SE=2,ST=3,up=4,down=5,left=6,right=7,A=8,X=9,L=10,R=11,'1'=12,'1'=13,'1'=14,'1'=15]
-            s_nxt.ctrl_state_internal(s.data_cnt) <= snes_data;
+            s_nxt.ctrl_state_internal(s.data_cnt) <= not snes_data; --not bc snes data is active low
           else
             --TODO: insert real error handling here, check if data is '1' else => ERROR
             --[1'=12,'1'=13,'1'=14,'1'=15]

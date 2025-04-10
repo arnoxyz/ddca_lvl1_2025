@@ -31,18 +31,33 @@ begin
 		begin
 			-- wait for the falling edge on the snes_latch signal to start transmission
 			wait until falling_edge(snes_latch);
-			-- TODO: Create waveform for snes_data
+
+			-- transmitt data
+      for a in 0 to 11 loop
+        wait until rising_edge(snes_clk);
+        snes_data <= to_sulv(buttons)(a);
+        report to_string(to_sulv(buttons)(a));
+      end loop;
+        
+			-- transmitt the last 4 bits that are always '1'
+      wait until rising_edge(snes_clk);
+      snes_data <= '1';
+      wait until rising_edge(snes_clk);
+      snes_data <= '1';
+      wait until rising_edge(snes_clk);
+      snes_data <= '1';
+      wait until rising_edge(snes_clk);
+      snes_data <= '1';
 		end procedure;
 	begin
 		report "Simulation start";
 		-- Example for generating random input data
     res_n <= '0';
-    wait for 5*CLK_PERIOD;
+    wait for 3*CLK_PERIOD;
     res_n <= '1';
-    wait for 5*CLK_PERIOD;
+    wait for 3*CLK_PERIOD;
 
 		generate_snes_data_input(to_snes_ctrl_state(rnd.gen_sulv_01(12)));
-    wait for 1000000 ns;
 
     clk_stop <= '1';
 		report "Simulation end";
