@@ -58,7 +58,7 @@ architecture arch of snes_ctrl is
 	type fsm_state_t is (START, IDLE, READ_INPUT, WAIT_NEXT_POLL);
 	type fsm_state_reg_t is record
 		state : fsm_state_t;
-    ctrl_state_internal : snes_ctrl_state_t; 
+    ctrl_state_internal : std_ulogic_vector(11 downto 0); --snes_ctrl_state_t; 
     snes_clk : std_ulogic;
     snes_latch : std_ulogic;
     --Counter for the data from the snes_controller:
@@ -69,15 +69,16 @@ architecture arch of snes_ctrl is
     clk_cnt : unsigned(log2c(CLK_FREQ) downto 0 );
 	end record;
 
-	constant STATE_REG_NULL : fsm_state_reg_t := (state => START, ctrl_state_internal => SNES_CTRL_STATE_RESET_VALUE, snes_clk=>'0', snes_latch=>'0', others => (others => '0'));
+	constant STATE_REG_NULL : fsm_state_reg_t := (state => START, ctrl_state_internal => (others => '0'), snes_clk=>'0', snes_latch=>'0', others => (others => '0'));
 	signal s, s_nxt : fsm_state_reg_t;
 
 
 begin
 	comb : process(all) is 
+    variable local_data : std_ulogic;
 	begin 
     s_nxt <= s;
-    ctrl_state <= s.ctrl_state_internal;
+    ctrl_state <= to_snes_ctrl_state(s.ctrl_state_internal);
     snes_clk   <= s.snes_clk;
     snes_latch <= s.snes_latch;
     
@@ -103,8 +104,15 @@ begin
         elsif s.clk_cnt = CLK_SNES_CC / 2 then 
           s_nxt.snes_clk <= '0';
         elsif s.clk_cnt = CLK_SNES_CC -1 then 
-          --TODO: save data in the ctrl state (use functions provided in snes_pkg and the snes data_cnt reg)
-          --s_nxt.  ctrl_state_internal : snes_ctrl_state_t; 
+          if s.data_cnt < 11 then 
+            --get the data 
+            s_nxt.ctrl_state_internal(to_integer(s.data_cnt)) <= snes_data;
+          else
+            --TODO: insert real error handling here, check if data is '1' else => ERROR
+            if snes_data /= '1' then 
+              report "ERROR";
+            end if;
+          end if;
           s_nxt.clk_cnt <= (others=>'0');
           s_nxt.data_cnt <= s.data_cnt + 1;
         end if;
