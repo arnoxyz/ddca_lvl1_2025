@@ -34,13 +34,11 @@ begin
 
 			-- transmitt data
       for a in 0 to 11 loop
-        snes_data <= not to_sulv(buttons)(a);
         wait until rising_edge(snes_clk);
-        report to_string(to_sulv(buttons)(a));
+        snes_data <= not to_sulv(buttons)(a);
       end loop;
         
 			-- transmitt the last 4 bits that are always '1' (so not '1' = '0')
-      snes_data <= '0';
       wait until rising_edge(snes_clk);
       snes_data <= '0';
       wait until rising_edge(snes_clk);
@@ -48,7 +46,10 @@ begin
       wait until rising_edge(snes_clk);
       snes_data <= '0';
       wait until rising_edge(snes_clk);
+      snes_data <= '0';
 		end procedure;
+
+    variable input_val : snes_ctrl_state_t;
 	begin
 		report "Simulation start";
 		-- Example for generating random input data
@@ -57,7 +58,10 @@ begin
     res_n <= '1';
     wait for 3*CLK_PERIOD;
 
-		generate_snes_data_input(to_snes_ctrl_state(rnd.gen_sulv_01(12)));
+		--generate_snes_data_input(to_snes_ctrl_state(rnd.gen_sulv_01(12)));
+    input_val := to_snes_ctrl_state(rnd.gen_sulv_01(12));
+    generate_snes_data_input(input_val);
+    assert input_val = ctrl_state report "ERROR!!" & to_string(to_sulv(input_val)) & " != " & to_string(to_sulv(ctrl_state));
 
     clk_stop <= '1';
 		report "Simulation end";

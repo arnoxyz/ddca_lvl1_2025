@@ -1,5 +1,4 @@
 --TODO: add synrchonizer for data input 
---TODO: check waveform, generate more inputs in the waveform (check with assertions?)
 --TODO: add assertion for limit frequency of controller (snes_clk) 
 --TODO: Test in FPGA Board
 
