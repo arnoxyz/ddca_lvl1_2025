@@ -53,7 +53,9 @@ entity snes_ctrl is
 end entity;
 
 architecture arch of snes_ctrl is
-	type fsm_state_t is (START, IDLE, READ_INPUT, WAIT_NEXT_INPUT);
+  constant CLK_SNES_CC : integer := CLK_FREQ / CLK_OUT_FREQ; --clock cycles to wait to gen clk_out_freq from the clk_freq (for snes_clk)
+
+	type fsm_state_t is (START, IDLE, READ_INPUT, WAIT_NEXT_POLL);
 	type fsm_state_reg_t is record
 		state : fsm_state_t;
     ctrl_state_internal : snes_ctrl_state_t; 
@@ -70,23 +72,8 @@ architecture arch of snes_ctrl is
 	constant STATE_REG_NULL : fsm_state_reg_t := (state => START, ctrl_state_internal => SNES_CTRL_STATE_RESET_VALUE, snes_clk=>'0', snes_latch=>'0', others => (others => '0'));
 	signal s, s_nxt : fsm_state_reg_t;
 
-  --generate a clk for the snes_controller (snes_clk)
-   --CLK Generics given:
-   --CLK_FREQ        : integer := 50_000_000; --main-clk
-   --CLK_OUT_FREQ    : integer := 100_000;    --clk freq for snes communication
-   --clock cycles to wait to gen clk_out_freq from the clk_freq
-   constant CLK_SNES_CC : integer := CLK_FREQ / CLK_OUT_FREQ; 
 
 begin
-	sync : process(clk, res_n) is 
-	begin 
-		if res_n = '0' then 
-			s <= STATE_REG_NULL;
-		elsif rising_edge(clk) then 
-			s <= s_nxt;
-		end if;
-	end process;
-
 	comb : process(all) is 
 	begin 
     s_nxt <= s;
@@ -107,10 +94,37 @@ begin
           s_nxt.state <= READ_INPUT;
           s_nxt.clk_cnt <= (others=>'0');
         end if;
-
       when READ_INPUT =>
-      when WAIT_NEXT_INPUT =>
+        --now start pulling data from the controller by inserting clk
+        s_nxt.clk_cnt <= s.clk_cnt +1;
+
+        if to_integer(s.clk_cnt) = 0 then 
+          s_nxt.snes_clk <= '1';
+        elsif s.clk_cnt = CLK_SNES_CC / 2 then 
+          s_nxt.snes_clk <= '0';
+        elsif s.clk_cnt = CLK_SNES_CC -1 then 
+          --TODO: save data in the ctrl state (use functions provided in snes_pkg and the snes data_cnt reg)
+          --s_nxt.  ctrl_state_internal : snes_ctrl_state_t; 
+          s_nxt.clk_cnt <= (others=>'0');
+          s_nxt.data_cnt <= s.data_cnt + 1;
+        end if;
+
+        if s.data_cnt > 15 then 
+          s_nxt.state <= WAIT_NEXT_POLL;
+          s_nxt.clk_cnt <= (others=>'0');
+          s_nxt.data_cnt <= (others=>'0');
+        end if;
+      when WAIT_NEXT_POLL =>
       when IDLE =>
     end case;
+	end process;
+
+	sync : process(clk, res_n) is 
+	begin 
+		if res_n = '0' then 
+			s <= STATE_REG_NULL;
+		elsif rising_edge(clk) then 
+			s <= s_nxt;
+		end if;
 	end process;
 end architecture;
