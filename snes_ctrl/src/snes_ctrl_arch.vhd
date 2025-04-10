@@ -53,16 +53,29 @@ entity snes_ctrl is
 end entity;
 
 architecture arch of snes_ctrl is
-	type fsm_state_t is (IDLE, READ_INPUT, WAIT_NEXT_INPUT);
+	type fsm_state_t is (START, IDLE, READ_INPUT, WAIT_NEXT_INPUT);
 	type fsm_state_reg_t is record
 		state : fsm_state_t;
-    ctrl_state_internal : snes_ctrl_state_t;
-    read_cnt : unsigned(3 downto 0);
+    ctrl_state_internal : snes_ctrl_state_t; 
+    snes_clk : std_ulogic;
+    snes_latch : std_ulogic;
+    --Counter for the data from the snes_controller:
+    --counts from 0=B, to 11=R for data and then to 12-15='1' = data will be checked but not saved) 
+    --[B=0,Y=1,SE=2,ST=3,up=4,down=5,left=6,right=7,A=8,X=9,L=10,R=11,'1'=12,'1'=13,'1'=14,'1'=15]
+    data_cnt : unsigned(3 downto 0); 
+    --Used to generate the output clk snes_clk
     clk_cnt : unsigned(log2c(CLK_FREQ) downto 0 );
 	end record;
 
-	constant STATE_REG_NULL : fsm_state_reg_t := (state => IDLE, ctrl_state_internal => SNES_CTRL_STATE_RESET_VALUE, others => (others => '0'));
+	constant STATE_REG_NULL : fsm_state_reg_t := (state => START, ctrl_state_internal => SNES_CTRL_STATE_RESET_VALUE, snes_clk=>'0', snes_latch=>'0', others => (others => '0'));
 	signal s, s_nxt : fsm_state_reg_t;
+
+  --generate a clk for the snes_controller (snes_clk)
+   --CLK Generics given:
+   --CLK_FREQ        : integer := 50_000_000; --main-clk
+   --CLK_OUT_FREQ    : integer := 100_000;    --clk freq for snes communication
+   --clock cycles to wait to gen clk_out_freq from the clk_freq
+   constant CLK_SNES_CC : integer := CLK_FREQ / CLK_OUT_FREQ; 
 
 begin
 	sync : process(clk, res_n) is 
@@ -78,11 +91,26 @@ begin
 	begin 
     s_nxt <= s;
     ctrl_state <= s.ctrl_state_internal;
+    snes_clk   <= s.snes_clk;
+    snes_latch <= s.snes_latch;
     
     case s.state is 
-      when IDLE =>
+      when START =>
+        --pull latch 
+        s_nxt.clk_cnt <= s.clk_cnt + 1;
+
+        if to_integer(s.clk_cnt) = 0 then 
+          s_nxt.snes_latch <= '1';
+        elsif s.clk_cnt = CLK_SNES_CC / 2 then 
+          s_nxt.snes_latch <= '0';
+        elsif s.clk_cnt = CLK_SNES_CC -1 then 
+          s_nxt.state <= READ_INPUT;
+          s_nxt.clk_cnt <= (others=>'0');
+        end if;
+
       when READ_INPUT =>
       when WAIT_NEXT_INPUT =>
+      when IDLE =>
     end case;
 	end process;
 end architecture;
