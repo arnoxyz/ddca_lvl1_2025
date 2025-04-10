@@ -61,9 +61,6 @@ architecture arch of snes_ctrl is
     ctrl_state_internal : std_ulogic_vector(11 downto 0); --snes_ctrl_state_t; 
     snes_clk : std_ulogic;
     snes_latch : std_ulogic;
-    --Counter for the data from the snes_controller:
-    --counts from 0=B, to 11=R for data and then to 12-15='1' = data will be checked but not saved) 
-    --[B=0,Y=1,SE=2,ST=3,up=4,down=5,left=6,right=7,A=8,X=9,L=10,R=11,'1'=12,'1'=13,'1'=14,'1'=15]
     data_cnt : unsigned(3 downto 0); 
     --Used to generate the output clk snes_clk
     clk_cnt : unsigned(log2c(CLK_FREQ) downto 0 );
@@ -104,20 +101,25 @@ begin
         elsif s.clk_cnt = CLK_SNES_CC / 2 then 
           s_nxt.snes_clk <= '0';
         elsif s.clk_cnt = CLK_SNES_CC -1 then 
-          if s.data_cnt < 11 then 
+          if s.data_cnt <= 11 then 
             --get the data 
+            --data_cnt => Counter for the data from the snes_controller:
+            --counts from 0=B, to 11=R for data and then to 12-15='1' = data will be checked but not saved) 
+            --[B=0,Y=1,SE=2,ST=3,up=4,down=5,left=6,right=7,A=8,X=9,L=10,R=11,'1'=12,'1'=13,'1'=14,'1'=15]
             s_nxt.ctrl_state_internal(to_integer(s.data_cnt)) <= snes_data;
           else
             --TODO: insert real error handling here, check if data is '1' else => ERROR
+            --[1'=12,'1'=13,'1'=14,'1'=15]
             if snes_data /= '1' then 
               report "ERROR";
             end if;
           end if;
+
           s_nxt.clk_cnt <= (others=>'0');
           s_nxt.data_cnt <= s.data_cnt + 1;
         end if;
 
-        if s.data_cnt > 15 then 
+        if s.data_cnt > 16 then 
           s_nxt.state <= WAIT_NEXT_POLL;
           s_nxt.clk_cnt <= (others=>'0');
           s_nxt.data_cnt <= (others=>'0');
