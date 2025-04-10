@@ -1,5 +1,4 @@
 --TODO: add synrchonizer for data input 
---TODO: add assertion for limit frequency of controller (snes_clk) 
 --TODO: Test in FPGA Board
 
 --for TB:
@@ -57,6 +56,8 @@ entity snes_ctrl is
   --the read inputs from the snes controller
     ctrl_state : out snes_ctrl_state_t
   );
+  begin
+    assert CLK_OUT_FREQ <= 500_000  report "Do not use frequencies above 500 kHz (due to the timing constrains of the snes_gamepads internals), value of Generic: CLK_OUT_FREQ" severity FAILURE;
 end entity;
 
 architecture arch of snes_ctrl is
@@ -74,7 +75,8 @@ architecture arch of snes_ctrl is
 	end record;
 
 	constant STATE_REG_NULL : fsm_state_reg_t := (state => START, data_cnt => 0, ctrl_state_internal => (others => '0'), snes_clk=>'0', snes_latch=>'0', clk_cnt => (others => '0'));
-	signal s, s_nxt : fsm_state_reg_t;
+	signal s : fsm_state_reg_t := STATE_REG_NULL;
+  signal s_nxt : fsm_state_reg_t;
 
 begin
 	comb : process(all) is 
@@ -113,6 +115,7 @@ begin
             --counts from 0=B, to 11=R for data and then to 12-15='1' = data will be checked but not saved) 
             --[B=0,Y=1,SE=2,ST=3,up=4,down=5,left=6,right=7,A=8,X=9,L=10,R=11,'1'=12,'1'=13,'1'=14,'1'=15]
             s_nxt.ctrl_state_internal(s.data_cnt) <= not snes_data; --not bc snes data is active low
+            --TODO: add syncronizer for the inserted data 
           else
             --TODO: insert real error handling here, check if data is '1' else => ERROR
             --[1'=12,'1'=13,'1'=14,'1'=15]

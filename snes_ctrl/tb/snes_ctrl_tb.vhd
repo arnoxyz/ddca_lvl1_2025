@@ -51,7 +51,7 @@ begin
 
     variable input_val : snes_ctrl_state_t;
 	begin
-		report "Simulation start";
+		report "sim start";
 		-- Example for generating random input data
     res_n <= '0';
     wait for 3*CLK_PERIOD;
@@ -64,7 +64,7 @@ begin
     assert input_val = ctrl_state report "ERROR!!" & to_string(to_sulv(input_val)) & " != " & to_string(to_sulv(ctrl_state));
 
     clk_stop <= '1';
-		report "Simulation end";
+		report "sim done";
 		-- End simulation
 		wait;
 	end process;
