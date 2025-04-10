@@ -1,8 +1,10 @@
---TODO: add synrchonizer
+--TODO: add synrchonizer for data input 
 --TODO: check waveform, generate more inputs in the waveform (check with assertions?)
 --TODO: add assertion for limit frequency of controller (snes_clk) 
 --TODO: Test in FPGA Board
 
+--for TB:
+ --TODO: UUT2 the provided solution and check the waveforms with my design 
 
 
 --SNES_CTRL: Main Goal is to get the data from the snes_controller in an easy way and save it in ctrl_state : out using the provided type snes_ctrl_state_t
@@ -115,7 +117,7 @@ begin
           else
             --TODO: insert real error handling here, check if data is '1' else => ERROR
             --[1'=12,'1'=13,'1'=14,'1'=15]
-            if snes_data /= '1' then 
+            if snes_data /= '0' then 
               report "ERROR";
               --assert snes_data = '1' report "ERROR snes data is not 1" severity FAILURE;
             end if;

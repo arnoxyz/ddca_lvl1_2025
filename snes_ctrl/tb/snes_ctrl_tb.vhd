@@ -34,20 +34,20 @@ begin
 
 			-- transmitt data
       for a in 0 to 11 loop
+        snes_data <= not to_sulv(buttons)(a);
         wait until rising_edge(snes_clk);
-        snes_data <= to_sulv(buttons)(a);
         report to_string(to_sulv(buttons)(a));
       end loop;
         
-			-- transmitt the last 4 bits that are always '1'
+			-- transmitt the last 4 bits that are always '1' (so not '1' = '0')
+      snes_data <= '0';
       wait until rising_edge(snes_clk);
-      snes_data <= '1';
+      snes_data <= '0';
       wait until rising_edge(snes_clk);
-      snes_data <= '1';
+      snes_data <= '0';
       wait until rising_edge(snes_clk);
-      snes_data <= '1';
+      snes_data <= '0';
       wait until rising_edge(snes_clk);
-      snes_data <= '1';
 		end procedure;
 	begin
 		report "Simulation start";
@@ -92,5 +92,4 @@ begin
 		ctrl_state => ctrl_state
 	);
 
- --TODO: UUT2 the provided solution and check the waveforms with my design 
 end architecture;
