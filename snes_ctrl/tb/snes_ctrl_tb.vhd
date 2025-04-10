@@ -14,9 +14,8 @@ architecture bench of snes_ctrl_tb is
 	constant REFRESH_TIMEOUT : integer := 1000;
   constant CLK_PERIOD      : time    := 1 sec / CLK_FREQ;
 
-
-	signal clk   : std_ulogic;
-	signal res_n : std_ulogic;
+	signal clk   : std_ulogic := '0';
+	signal res_n : std_ulogic := '0';
 	signal snes_clk   : std_ulogic;
 	signal snes_latch : std_ulogic;
 	signal snes_data  : std_ulogic;
@@ -36,10 +35,14 @@ begin
 		end procedure;
 	begin
 		report "Simulation start";
-		-- TODO: Check your design
 		-- Example for generating random input data
-		--generate_snes_data_input(to_snes_ctrl_state(rnd.gen_sulv_01(12)));
-    wait for 1 ns;
+    res_n <= '0';
+    wait for 5*CLK_PERIOD;
+    res_n <= '1';
+    wait for 5*CLK_PERIOD;
+
+		generate_snes_data_input(to_snes_ctrl_state(rnd.gen_sulv_01(12)));
+    wait for 1000000 ns;
 
     clk_stop <= '1';
 		report "Simulation end";
