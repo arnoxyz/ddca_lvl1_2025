@@ -1,3 +1,10 @@
+--TODO: add synrchonizer
+--TODO: check waveform, generate more inputs in the waveform (check with assertions?)
+--TODO: add assertion for limit frequency of controller (snes_clk) 
+--TODO: Test in FPGA Board
+
+
+
 --SNES_CTRL: Main Goal is to get the data from the snes_controller in an easy way and save it in ctrl_state : out using the provided type snes_ctrl_state_t
 
 /*
