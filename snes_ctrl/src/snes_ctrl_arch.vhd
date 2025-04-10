@@ -55,7 +55,7 @@ end entity;
 architecture arch of snes_ctrl is
   constant CLK_SNES_CC : integer := CLK_FREQ / CLK_OUT_FREQ; --clock cycles to wait to gen clk_out_freq from the clk_freq (for snes_clk)
 
-	type fsm_state_t is (START, IDLE, READ_INPUT, WAIT_NEXT_POLL);
+	type fsm_state_t is (START, READ_INPUT, WAIT_NEXT_POLL);
 	type fsm_state_reg_t is record
 		state : fsm_state_t;
     ctrl_state_internal : std_ulogic_vector(11 downto 0); --snes_ctrl_state_t; 
@@ -112,6 +112,7 @@ begin
             --[1'=12,'1'=13,'1'=14,'1'=15]
             if snes_data /= '1' then 
               report "ERROR";
+              --assert snes_data = '1' report "ERROR snes data is not 1" severity FAILURE;
             end if;
           end if;
 
@@ -124,8 +125,16 @@ begin
           s_nxt.clk_cnt <= (others=>'0');
           s_nxt.data_cnt <= (others=>'0');
         end if;
+
       when WAIT_NEXT_POLL =>
-      when IDLE =>
+        --wait until polling again for: REFRESH_TIMEOUT : integer := 1000
+        s_nxt.clk_cnt <= s.clk_cnt + 1;
+        s_nxt.snes_clk <= '1';
+
+        if s.clk_cnt = REFRESH_TIMEOUT then 
+          s_nxt.state <= START;
+          s_nxt.clk_cnt <= (others=>'0');
+        end if;
     end case;
 	end process;
 
