@@ -1,4 +1,5 @@
 --SNES_CTRL: Main Goal is to get the data from the snes_controller in an easy way and save it in ctrl_state : out using the provided type snes_ctrl_state_t
+
 /*
   Reads the Inputs of a snes gamepad 
   FORMAT: [B,Y,SE,ST,up,down,left,right,A,X,L,R,'1','1','1','1']
@@ -41,12 +42,10 @@ entity snes_ctrl is
   --sync-design
     clk        : in  std_ulogic;
     res_n      : in  std_ulogic;
-
   --snes-ctrl-signals (communication)
     snes_clk   : out std_ulogic;
     snes_latch : out std_ulogic;
     snes_data  : in  std_ulogic;
-
   --the read inputs from the snes controller
     ctrl_state : out snes_ctrl_state_t
   );
@@ -68,7 +67,6 @@ architecture arch of snes_ctrl is
 
 	constant STATE_REG_NULL : fsm_state_reg_t := (state => START, ctrl_state_internal => (others => '0'), snes_clk=>'0', snes_latch=>'0', others => (others => '0'));
 	signal s, s_nxt : fsm_state_reg_t;
-
 
 begin
 	comb : process(all) is 
@@ -125,7 +123,6 @@ begin
           s_nxt.clk_cnt <= (others=>'0');
           s_nxt.data_cnt <= (others=>'0');
         end if;
-
       when WAIT_NEXT_POLL =>
         --wait until polling again for: REFRESH_TIMEOUT : integer := 1000
         s_nxt.clk_cnt <= s.clk_cnt + 1;
