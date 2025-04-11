@@ -125,12 +125,8 @@ begin
             s_nxt.ctrl_state_internal(s.data_cnt) <= sync_output;
 
           else
-            --TODO: insert real error handling here, check if data is '1' else => ERROR
             --[1'=12,'1'=13,'1'=14,'1'=15]
-            if snes_data /= '0' then 
-              report "ERROR";
-              --assert snes_data = '1' report "ERROR snes data is not 1" severity FAILURE;
-            end if;
+            assert snes_data = '0' report "ERROR snes data is not 1" severity ERROR;
           end if;
 
           s_nxt.clk_cnt <= (others=>'0');
