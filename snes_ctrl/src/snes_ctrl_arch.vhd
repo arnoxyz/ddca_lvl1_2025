@@ -1,4 +1,3 @@
---TODO: add synrchonizer for data input 
 --TODO: Test in FPGA Board
 
 --for TB:
@@ -39,6 +38,8 @@ use ieee.numeric_std.all;
 use work.snes_ctrl_pkg.all;
 use work.math_pkg.all;
 
+use work.sync_pkg.all;
+
 entity snes_ctrl is
   generic (
     CLK_FREQ        : integer := 50_000_000; --main-clk
@@ -62,6 +63,7 @@ end entity;
 
 architecture arch of snes_ctrl is
   constant CLK_SNES_CC : integer := CLK_FREQ / CLK_OUT_FREQ; --clock cycles to wait to gen clk_out_freq from the clk_freq (for snes_clk)
+  constant SYNC_STAGES : integer := 2;
 
 	type fsm_state_t is (START, READ_INPUT, WAIT_NEXT_POLL);
 	type fsm_state_reg_t is record
@@ -77,6 +79,9 @@ architecture arch of snes_ctrl is
 	constant STATE_REG_NULL : fsm_state_reg_t := (state => START, data_cnt => 0, ctrl_state_internal => (others => '0'), snes_clk=>'0', snes_latch=>'0', clk_cnt => (others => '0'));
 	signal s : fsm_state_reg_t := STATE_REG_NULL;
   signal s_nxt : fsm_state_reg_t;
+
+  signal sync_input : std_ulogic;
+  signal sync_output : std_ulogic;
 
 begin
 	comb : process(all) is 
@@ -114,8 +119,11 @@ begin
             --data_cnt => Counter for the data from the snes_controller:
             --counts from 0=B, to 11=R for data and then to 12-15='1' = data will be checked but not saved) 
             --[B=0,Y=1,SE=2,ST=3,up=4,down=5,left=6,right=7,A=8,X=9,L=10,R=11,'1'=12,'1'=13,'1'=14,'1'=15]
-            s_nxt.ctrl_state_internal(s.data_cnt) <= not snes_data; --not bc snes data is active low
-            --TODO: add syncronizer for the inserted data 
+
+            --s_nxt.ctrl_state_internal(s.data_cnt) <= not snes_data; --not bc snes data is active low
+            sync_input <= not snes_data;
+            s_nxt.ctrl_state_internal(s.data_cnt) <= sync_output;
+
           else
             --TODO: insert real error handling here, check if data is '1' else => ERROR
             --[1'=12,'1'=13,'1'=14,'1'=15]
@@ -154,4 +162,19 @@ begin
 			s <= s_nxt;
 		end if;
 	end process;
+
+  --syncronizer for data_in
+  sync_inst : entity work.sync
+  generic map(
+    SYNC_STAGES => SYNC_STAGES, 
+    RESET_VALUE => '0'
+  )
+  port map (
+    clk       => clk, 
+    res_n     => res_n, 
+    data_in   => sync_input, 
+    data_out  => sync_output
+  );
+
+
 end architecture;
