@@ -32,21 +32,23 @@ begin
 			-- wait for the falling edge on the snes_latch signal to start transmission
 			wait until falling_edge(snes_latch);
 
+      --start transmitting by the rising_edge(snes_latch)
+			wait until rising_edge(snes_latch);
+      snes_data <= not to_sulv(buttons)(0);
+
+      wait until rising_edge(snes_clk);
 			-- transmitt data
-      for a in 0 to 11 loop
-        wait until rising_edge(snes_clk);
+      for a in 1 to 11 loop
+			  wait until rising_edge(snes_clk);
         snes_data <= not to_sulv(buttons)(a);
       end loop;
         
 			-- transmitt the last 4 bits that are always '1' (so not '1' = '0')
-      wait until rising_edge(snes_clk);
       snes_data <= '0';
       wait until rising_edge(snes_clk);
-      snes_data <= '0';
       wait until rising_edge(snes_clk);
-      snes_data <= '0';
       wait until rising_edge(snes_clk);
-      snes_data <= '0';
+      wait until rising_edge(snes_clk);
 		end procedure;
 
     variable input_val : snes_ctrl_state_t;

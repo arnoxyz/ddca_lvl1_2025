@@ -79,9 +79,7 @@ architecture arch of snes_ctrl is
 	constant STATE_REG_NULL : fsm_state_reg_t := (state => START, data_cnt => 0, ctrl_state_internal => (others => '0'), snes_clk=>'0', snes_latch=>'0', clk_cnt => (others => '0'));
 	signal s : fsm_state_reg_t := STATE_REG_NULL;
   signal s_nxt : fsm_state_reg_t;
-
-  signal sync_input : std_ulogic;
-  signal sync_output : std_ulogic;
+  signal data_in_synced : std_ulogic;
 
 begin
 	comb : process(all) is 
@@ -119,10 +117,9 @@ begin
             --data_cnt => Counter for the data from the snes_controller:
             --counts from 0=B, to 11=R for data and then to 12-15='1' = data will be checked but not saved) 
             --[B=0,Y=1,SE=2,ST=3,up=4,down=5,left=6,right=7,A=8,X=9,L=10,R=11,'1'=12,'1'=13,'1'=14,'1'=15]
-
             --s_nxt.ctrl_state_internal(s.data_cnt) <= not snes_data; --not bc snes data is active low
-            sync_input <= not snes_data;
-            s_nxt.ctrl_state_internal(s.data_cnt) <= sync_output;
+            s_nxt.ctrl_state_internal(s.data_cnt) <= not data_in_synced; --not bc snes data is active low
+
 
           else
             --[1'=12,'1'=13,'1'=14,'1'=15]
@@ -168,9 +165,8 @@ begin
   port map (
     clk       => clk, 
     res_n     => res_n, 
-    data_in   => sync_input, 
-    data_out  => sync_output
+    data_in   => snes_data, 
+    data_out  => data_in_synced
   );
-
 
 end architecture;
